@@ -1,0 +1,23 @@
+{
+  "name": "backend",
+  "version": "0.0.1",
+  "main": "index.js",
+  "license": "GPLv3",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.1692.0",
+    "express": "^4.21.2",
+    "shared": "0.0.1",
+    "vite": "^6.0.6"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.146",
+    "@types/express": "^5.0.0",
+    "typescript": "^5.7.2",
+    "vite-plugin-node": "^4.0.0"
+  }
+}

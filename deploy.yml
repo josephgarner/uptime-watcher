@@ -1,0 +1,105 @@
+---
+- name: Deploy TypeScript Lambda Endpoints
+  hosts: localhost
+  tasks:
+    # Step 1: Ensure an S3 bucket exists for Lambda packages
+    - name: Create S3 bucket for deployment
+      aws_s3:
+        bucket: uptime-watcher-deployment
+        mode: create
+        region: ap-southeast-2
+
+    # Step 2: Build TypeScript and create a ZIP package for the GET endpoint
+    - name: Build TypeScript
+      command: yarn build
+      args:
+        chdir: "{{ playbook_dir }}/apps/backend"
+
+    - name: Package GET endpoint
+      command: zip -r get-function.zip dist/endpoints/getEndpoint.js
+      args:
+        chdir: "{{ playbook_dir }}/apps/backend"
+
+    - name: Upload GET endpoint package to S3
+      aws_s3:
+        bucket: uptime-watcher-deployment
+        object: get-function.zip
+        src: "{{ playbook_dir }}/apps/backend/get-function.zip"
+        mode: put
+
+    # Step 3: Deploy the GET Lambda function
+    - name: Deploy GET Lambda function
+      lambda:
+        state: present
+        name: get-endpoint-lambda
+        region: ap-southeast-2
+        runtime: nodejs18.x
+        handler: dist/endpoints/getEndpoint.handler
+        s3_bucket: uptime-watcher-deployment
+        s3_key: get-function.zip
+        role: arn:aws:iam::123456789012:role/lambda-execution-role
+
+    # Step 4: Create a ZIP package for the POST endpoint
+    - name: Package POST endpoint
+      command: zip -r post-function.zip dist/endpoints/postEndpoint.js
+      args:
+        chdir: "{{ playbook_dir }}/apps/backend"
+
+    - name: Upload POST endpoint package to S3
+      aws_s3:
+        bucket: uptime-watcher-deployment
+        object: post-function.zip
+        src: "{{ playbook_dir }}/apps/backend/post-function.zip"
+        mode: put
+
+    # Step 5: Deploy the POST Lambda function
+    - name: Deploy POST Lambda function
+      lambda:
+        state: present
+        name: post-endpoint-lambda
+        region: ap-southeast-2
+        runtime: nodejs18.x
+        handler: dist/endpoints/postEndpoint.handler
+        s3_bucket: uptime-watcher-deployment
+        s3_key: post-function.zip
+        role: arn:aws:iam::123456789012:role/lambda-execution-role
+
+    # Step 6: Set up API Gateway and integrate GET endpoint
+    - name: Create API Gateway for GET endpoint
+      aws_apigateway:
+        state: present
+        name: get-endpoint-api
+        region: ap-southeast-2
+        description: "API Gateway for GET endpoint"
+        swagger: |
+          swagger: "2.0"
+          info:
+            title: "GET API"
+            version: "1.0"
+          paths:
+            /get-endpoint:
+              get:
+                x-amazon-apigateway-integration:
+                  uri: "arn:aws:apigateway:ap-southeast-2:lambda:path/2015-03-31/functions/arn:aws:lambda:ap-southeast-2:123456789012:function:get-endpoint-lambda/invocations"
+                  httpMethod: "POST"
+                  type: "aws_proxy"
+
+    # Step 7: Set up API Gateway and integrate POST endpoint
+    - name: Create API Gateway for POST endpoint
+      aws_apigateway:
+        state: present
+        name: post-endpoint-api
+        region: ap-southeast-2
+        description: "API Gateway for POST endpoint"
+        swagger: |
+          swagger: "2.0"
+          info:
+            title: "POST API"
+            version: "1.0"
+          paths:
+            /post-endpoint:
+              post:
+                x-amazon-apigateway-integration:
+                  uri: "arn:aws:apigateway:ap-southeast-2:lambda:path/2015-03-31/functions/arn:aws:lambda:ap-southeast-2:123456789012:function:post-endpoint-lambda/invocations"
+                  httpMethod: "POST"
+                  type: "aws_proxy"

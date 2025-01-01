@@ -1,22 +1,19 @@
 {
-  "name": "@uptime-watcher/source",
-  "version": "0.0.0",
-  "license": "MIT",
-  "scripts": {},
+  "name": "uptime-watcher",
+  "version": "0.0.1",
+  "main": "index.js",
+  "author": "Joseph Garner <joseph.peter.garner@gmail.com>",
+  "license": "GPLv3",
   "private": true,
-  "dependencies": {},
-  "devDependencies": {
-    "@nx/js": "20.3.0",
-    "@swc-node/register": "~1.9.1",
-    "@swc/core": "~1.5.7",
-    "@swc/helpers": "~0.5.11",
-    "nx": "20.3.0",
-    "prettier": "^2.6.2",
-    "tslib": "^2.3.0",
-    "typescript": "~5.6.2"
+  "scripts": {
+    "clean": "rimraf node_modules apps/frontend/node_modules packages/shared/node_modules",
+    "build:frontend": "yarn workspace frontend build",
+    "build:backend": "yarn workspace backend build",
+    "dev:frontend": "yarn workspace frontend dev",
+    "dev:backend": "yarn workspace backend dev"
   },
   "workspaces": [
-    "libs/**",
-    "packages/**"
+    "apps/*",
+    "packages/*"
   ]
 }
